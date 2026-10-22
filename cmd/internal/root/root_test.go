@@ -42,7 +42,7 @@ func TestRootCommandIdentityAndSurface(t *testing.T) {
 
 func TestPluginAndThemeCommandSurfaces(t *testing.T) {
 	root := New()
-	assertCommandNames(t, root, "plugin", []string{"build", "download", "info", "init", "list", "package", "publish", "search"})
+	assertCommandNames(t, root, "plugin", []string{"add", "build", "download", "info", "init", "list", "package", "publish", "search"})
 	assertCommandNames(t, root, "theme", []string{"apply", "download", "info", "install", "list", "publish", "remove", "rollback", "search", "update"})
 }
 
