@@ -1,0 +1,33 @@
+cwd: .
+
+build:
+  command: go build ./...
+
+run:
+  command: go run ./cmd/app
+  env:
+    APP_ENV: dev
+
+watch:
+  paths: [.]
+  include: ["**/*.go", go.mod, go.sum]
+  exclude: [.git, tmp, vendor, storage]
+  exclude_globs: []
+  mode: notify
+  poll_interval: 500ms
+  debounce: 300ms
+
+stop:
+  grace_timeout: 3s
+  kill_timeout: 2s
+
+restart:
+  policy: never
+  initial_delay: 500ms
+  max_delay: 10s
+  reset_after: 30s
+
+# health:
+#   url: http://127.0.0.1:8080
+#   path: /healthz
+#   timeout: 30s

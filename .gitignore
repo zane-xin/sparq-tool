@@ -1,0 +1,13 @@
+.tmp*
+
+.DS_Store
+.cache/
+bin/
+dist/
+tmp/
+*.log
+.idea/
+go.work
+go.work.sum
+__pycache__/
+*.pyc

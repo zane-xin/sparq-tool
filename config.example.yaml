@@ -1,0 +1,23 @@
+# sparq-tool 用户级默认配置示例。
+#
+# 复制到 $SPARQ_HOME/sparq-tool/config.yaml（默认是 ~/.sparq/sparq-tool/config.yaml）
+# 后，读取工具链的应用 build/dev 命令会使用这里的相应默认值。文件不存在时
+# 自动使用 go 和 pnpm 这两个内置命令，不需要手工创建。
+#
+# 用户配置只描述本机工具链，不要在这里填写项目目录、应用 package、生产
+# 配置或任何认证信息。项目专用配置应写入项目自己的
+# sparq.dev.yaml，且项目配置优先于本文件。
+
+toolchain:
+  go:
+    # 可填写绝对路径，例如 /opt/go/bin/go 或 C:/Go/bin/go.exe。
+    command: go
+    # 这些参数会放在 go build 之后、sparq-tool 生成的构建参数之前。
+    # 例如 [-mod=vendor] 会生成 go build -mod=vendor ...。
+    args: []
+
+  frontend:
+    # 可改为 corepack 并在 args 中填写 [pnpm]，也可以直接填写 pnpm10。
+    command: pnpm
+    # 用于包管理器的全局参数，例如 [--offline]。
+    args: []

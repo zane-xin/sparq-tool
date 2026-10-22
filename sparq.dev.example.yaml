@@ -1,0 +1,60 @@
+# 二次开发应用的项目级配置示例。
+#
+# 建议在应用仓库根目录保存为 sparq.dev.yaml。所有相对路径都以本文件所在
+# 目录为基准，因此应用移动到其他 workspace 后不需要修改构建命令。
+
+target:
+  # 当前只支持 application。
+  kind: application
+
+backend:
+  # dev app 使用的后端监听配置。该文件负责后端命令、监听规则和健康检查。
+  watch_file: config/sparq.watch.yaml
+
+app:
+  # Go module 目录。
+  dir: .
+  # 相对 app.dir 的 main package、二进制名称和输出目录。
+  package: ./cmd/example-app
+  binary: example-app
+  output: release/bin
+
+frontend:
+  # 这一段描述应用自己维护的前端源码或已安装 Artifact，不表示宿主 Admin Shell
+  # 的源码位置，也不会改变宿主固定的 public/admin 资源目录。
+  # source：开发时启动前端、构建时构建前端。
+  # source-dev：仅允许 dev app；build app 会明确报错。
+  # source-build：仅允许 build app；dev app 会明确报错。
+  # artifact：复用应用已经安装的前端 Artifact，不启动或构建前端源码。
+  # disabled：应用没有前端，不启动或构建前端。
+  mode: source
+  # 前端 package.json 所在目录。
+  cwd: frontend
+  # 开发命令。兼容 pnpm dev；pnpm 会替换为工具链入口，也可以只写 dev。
+  # 首项为最终工具名称、路径或工具参数末项时，同样去掉重复入口。
+  # 默认工具得到 pnpm dev；corepack + [pnpm] 同样得到 corepack pnpm dev。
+  command: pnpm dev
+  # 构建时传给包管理器的 package script 名称。
+  script: build
+  # 开发入口会以 SPARQ_DEV_FRONTEND_URL 传给应用后端。
+  url: http://127.0.0.1:5176/src/frontend.ts
+  # health 省略时检查 url 本身；填写时会相对 url 追加。
+  health: ""
+  env:
+    BROWSER: none
+  timeout: 30s
+  stop:
+    grace_timeout: 3s
+    kill_timeout: 2s
+
+# 项目级工具链覆盖用户级默认值；通常应省略，让每位开发者使用自己的
+# $SPARQ_HOME/sparq-tool/config.yaml。只有项目确实要求固定入口或参数时才声明。
+# toolchain:
+#   go:
+#     command: /opt/go/bin/go
+#     # 参数位于 go build 之后，例如 go build -mod=vendor ...。
+#     args: [-mod=vendor]
+#   frontend:
+#     command: corepack
+#     # 参数位于项目开发/构建参数之前，例如 corepack pnpm dev。
+#     args: [pnpm]

@@ -1,0 +1,72 @@
+# Sparq 插件联调配置模板。
+# 复制为 sparq.dev.yaml 后，根据实际宿主、插件和前端目录修改。
+# 所有相对路径均以当前配置文件所在目录为基准。
+
+app:
+  # 宿主启动命令；留空表示连接已经运行的 Sparq 宿主。
+  command: ""
+  # command 非空时使用的宿主工作目录。
+  cwd: ../path/to/sparq-app
+  # sparq-tool dev 访问宿主 API 的地址。
+  endpoint: http://127.0.0.1:19090
+  # 前端联调使用的开发令牌密钥；必须与宿主 dev.token_secret 一致，且至少 32 字节。
+  dev_secret: replace-with-host-dev-token-secret
+  # 宿主健康检查路径。
+  health: /__healthz__
+  # 等待宿主就绪的最长时间。
+  timeout: 60s
+
+plugin:
+  # 插件 code；必须与 plugin.yaml 的 metadata.code 一致。
+  id: your-plugin-code
+  # 当前命令启动的组件；默认脚手架的 Remote Runner 使用 backend。
+  component: backend
+  # 插件 Manifest 路径。
+  manifest: plugin.yaml
+  # Remote 插件对宿主公开的访问地址。
+  endpoint: http://127.0.0.1:19091
+  # 插件后端启动命令；将 your-plugin-code 替换为实际 code。
+  command: go run ./cmd/your-plugin-code
+  # 插件后端工作目录；模板与插件根目录放在一起时使用当前目录。
+  cwd: .
+  # Remote Runner 的健康检查路径。
+  health: /healthz
+  # Remote 注册密钥；必须与宿主 credentials.<plugin-code> 一致，且至少 32 字节。
+  secret: replace-with-plugin-secret-32-bytes
+  # 额外注入插件进程的环境变量。
+  env: {}
+  # 等待插件后端就绪的最长时间。
+  timeout: 60s
+  reload:
+    # 是否在源码变化后重启插件后端。
+    enabled: true
+    # 监听目录；相对路径以 plugin.cwd 为基准。
+    paths:
+      - .
+    # 触发重载的文件扩展名。
+    extensions: [.go, .json, .yaml]
+    # 无论扩展名如何都需要监听的文件名。
+    files: [go.mod, go.sum]
+    # 不监听的目录或文件。
+    exclude: [.git, frontend, storage]
+    # 连续文件事件合并等待时间。
+    debounce: 300ms
+    # 每次重载前执行的 Manifest 更新与编译检查命令。
+    build: sparq-tool plugin build . --target go
+
+frontend:
+  # 存在 frontend/src/frontend.ts 时会自动启用；显式配置主要用于覆盖端口和命令。
+  enabled: false
+  # 前端开发服务器启动命令；设置非空命令也会启用前端，例如 pnpm dev。
+  command: ""
+  # 前端工作目录。
+  cwd: frontend
+  # 前端开发服务器基础地址。
+  url: http://127.0.0.1:5175/plugins/your-plugin-code
+  # 前端健康检查路径或完整 URL。
+  health: /src/frontend.ts
+  # 额外注入前端进程的环境变量。
+  env:
+    BROWSER: none
+  # 等待前端开发服务器就绪的最长时间。
+  timeout: 30s
