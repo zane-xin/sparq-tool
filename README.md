@@ -682,3 +682,13 @@ Trusted 插件使用支持 `sharedModules` 的 `@sparqjs/vite-plugin` 配置 `cr
 插件在 `frontend/frontend.json` 的 `icons` 声明图标名和构建目录内的相对 SVG 路径，例如 `{"icons":{"article":"icons/article.svg"}}`，源文件放入 `frontend/public/icons/article.svg`。构建工具读取 `.vite/sparq-icons.json`，验证路径、普通文件与静态 SVG 内容，再写入 artifact 的 `icons` 和 `files`。随后 Manifest 生成、源码包构建、签名和宿主安装沿用同一摘要清单。菜单使用 `cms:article`，不依赖插件页面先加载。
 
 单色 SVG 最多 64 KiB，必须声明 namespace 与合法 viewBox，不接受脚本、事件、样式、外链、use 或 foreignObject。校验失败时构建退出，不生成新的正式 artifact。宿主发布前会独立复核，Session 只读取声明和摘要。
+
+## GitHub Actions 读取私有 Go 依赖
+
+仓库及其 Sparq 依赖暂未公开时，在本仓库的 **Settings → Secrets and variables → Actions → New repository secret** 添加 `SPARQ_GO_READ_TOKEN`。使用 fine-grained personal access token：Resource owner 选择 `zane-xin`，Repository access 选择本模块 `go.mod` 中直接和间接依赖的 Sparq 仓库，Repository permissions 只需 **Contents: Read-only**。令牌所属账号也必须有这些仓库的读取权限。
+
+统一配置时可选择 `sparq-protocol`、`sparq-blade`、`sparq-kernel`、`sparq-schema` 和 `sparq` 五个依赖仓库；不需要内部插件仓库的权限。分别在 `sparq-kernel`、`sparq-schema`、`sparq`、`sparq-tool` 和 `sparq-app` 配置同名 Secret。若使用组织级 Secret，需要将上述消费仓库加入可用范围。GitHub 自动提供的 `GITHUB_TOKEN` 只对当前仓库授权，增加 `contents: read` 不会让它拥有其他私有仓库的读取权限。
+
+CI 在 Go 初始化和缓存下载前配置 `GOPRIVATE/GONOPROXY/GONOSUMDB`，并在 Runner 临时目录写入权限为 0600 的 Git 认证配置；结束时清理。令牌不会写入源码、`go.mod` 或缓存。来自 fork 的 PR 不会获得 Secret，因此私有依赖检查会明确提示缺少令牌；不使用 `pull_request_target` 执行 PR 代码。
+
+依赖公开后，可移除 workflow 的私有认证与清理步骤，恢复匿名下载。认证只解决仓库读取问题：最新源码使用新增契约时，仍需按 protocol/blade → kernel → schema → sparq → app 的顺序发布新版本并更新依赖；工具依赖 protocol。推送 `main` 不会更新已有 `v0.0.1` 标签，也不能覆盖旧标签代替正常版本发布。
