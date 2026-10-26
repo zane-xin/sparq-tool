@@ -24,6 +24,7 @@ type Config struct {
 	Target    TargetConfig        `yaml:"target"`
 	Backend   BackendConfig       `yaml:"backend"`
 	App       AppConfig           `yaml:"app"`
+	Admin     *AdminConfig        `yaml:"admin"`
 	Frontend  FrontendConfig      `yaml:"frontend"`
 	Toolchain toolchain.Toolchain `yaml:"toolchain"`
 	baseDir   string
@@ -42,6 +43,12 @@ type AppConfig struct {
 
 type BackendConfig struct {
 	WatchFile string `yaml:"watch_file"`
+}
+
+// AdminConfig 只编排开发态 Admin Shell；发布源码路径仍由 build.yaml 的 admin.path 声明。
+type AdminConfig struct {
+	FrontendConfig `yaml:",inline"`
+	APIProxyTarget string `yaml:"api_proxy_target"`
 }
 
 type FrontendConfig struct {

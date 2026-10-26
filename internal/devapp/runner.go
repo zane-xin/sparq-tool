@@ -42,12 +42,14 @@ func Run(ctx context.Context, plan Plan, streams Streams) (runErr error) {
 	if err != nil {
 		return fmt.Errorf("启动应用后端失败: %w", err)
 	}
-	var frontend *watch.Process
+	var frontends []runningFrontend
 	defer func() {
+		cancel()
 		var cleanupErr error
-		if frontend != nil {
-			if err := frontend.Stop(); err != nil {
-				cleanupErr = errors.Join(cleanupErr, fmt.Errorf("停止应用前端失败: %w", err))
+		for i := len(frontends) - 1; i >= 0; i-- {
+			frontend := frontends[i]
+			if err := frontend.process.Stop(); err != nil {
+				cleanupErr = errors.Join(cleanupErr, fmt.Errorf("停止%s失败: %w", frontend.plan.Name, err))
 			}
 		}
 		if err := backend.Close(); err != nil {
@@ -58,68 +60,80 @@ func Run(ctx context.Context, plan Plan, streams Streams) (runErr error) {
 		}
 	}()
 
-	if !plan.FrontendEnabled {
+	plans := plan.Frontends()
+	exits := make(chan error, len(plans))
+	for _, frontendPlan := range plans {
+		process, err := watch.StartProcess(watch.Command{
+			Name: frontendPlan.Name, Command: frontendPlan.Command, Args: frontendPlan.Args,
+			CWD: frontendPlan.CWD, Env: frontendPlan.Env,
+			GraceTimeout: frontendPlan.Grace, KillTimeout: frontendPlan.Kill,
+			KeepStdinOpen: true, Stdout: streams.Stdout, Stderr: streams.Stderr,
+		})
+		if err != nil {
+			return fmt.Errorf("启动%s失败: %w", frontendPlan.Name, err)
+		}
+		frontends = append(frontends, runningFrontend{plan: frontendPlan, process: process})
+		go func() {
+			<-process.Done()
+			exits <- fmt.Errorf("%s开发进程已退出: %w", frontendPlan.Name, watch.ExitError(process))
+		}()
+	}
+
+	// 先启动全部前端，避免 Shell 首次请求业务模块时该进程尚未启动。
+	pending := false
+	for _, frontend := range frontends {
+		readyContext, stopReady := context.WithCancel(runContext)
+		result := make(chan error, 1)
+		go func() {
+			p := frontend.plan
+			result <- (watch.HTTPChecker{URL: p.URL, Path: p.Health, Timeout: p.Timeout}).Wait(readyContext, frontend.process)
+		}()
 		select {
 		case <-ctx.Done():
+			stopReady()
 			return nil
 		case <-backend.Done():
+			stopReady()
 			return fmt.Errorf("应用后端开发进程已退出: %w", backend.Err())
+		case err := <-exits:
+			stopReady()
+			return err
+		case err := <-result:
+			stopReady()
+			if ctx.Err() != nil {
+				return nil
+			}
+			select {
+			case <-frontend.process.Done():
+				return fmt.Errorf("%s开发进程已退出: %w", frontend.plan.Name, watch.ExitError(frontend.process))
+			default:
+			}
+			if err != nil {
+				pending = true
+				fmt.Fprintf(streams.Stderr, "[health] %s在 %s 内未就绪，开发进程仍在运行: %v\n", frontend.plan.Name, frontend.plan.Timeout, err)
+			} else {
+				fmt.Fprintf(streams.Stdout, "%s已就绪: %s\n", frontend.plan.Name, frontend.plan.URL)
+			}
 		}
 	}
-
-	frontend, err = watch.StartProcess(watch.Command{
-		Name: "应用前端", Command: plan.FrontendCommand, Args: plan.FrontendArgs, CWD: plan.FrontendCWD, Env: plan.FrontendEnv,
-		GraceTimeout: plan.FrontendGrace, KillTimeout: plan.FrontendKill,
-		KeepStdinOpen: true, Stdout: streams.Stdout, Stderr: streams.Stderr,
-	})
-	if err != nil {
-		return err
-	}
-	checker := watch.HTTPChecker{URL: plan.FrontendURL, Path: plan.FrontendHealth, Timeout: plan.FrontendTimeout}
-	if err := waitFrontendReady(runContext, checker, frontend, backend); err != nil {
-		select {
-		case <-ctx.Done():
-			return nil
-		case <-backend.Done():
-			return fmt.Errorf("等待应用前端就绪失败: 应用后端开发进程已退出: %w", backend.Err())
-		case <-frontend.Done():
-			return fmt.Errorf("等待应用前端就绪失败: %w", watch.ExitError(frontend))
-		default:
-			fmt.Fprintf(streams.Stderr, "[health] 应用前端在 %s 内未就绪，开发进程仍在运行: %v\n", plan.FrontendTimeout, err)
-			fmt.Fprintln(streams.Stdout, "应用联调已启动；应用前端仍在编译或等待请求，请查看前端输出")
-		}
+	if pending {
+		fmt.Fprintln(streams.Stdout, "应用联调已启动；前端仍在编译或等待请求，请查看前端输出")
 	} else {
-		fmt.Fprintf(streams.Stdout, "应用联调已就绪: 后端 %s，前端 %s\n", plan.Backend.HealthURL, plan.FrontendURL)
+		fmt.Fprintf(streams.Stdout, "应用联调已就绪: 后端 %s\n", plan.Backend.HealthURL)
 	}
-
 	select {
 	case <-ctx.Done():
 		return nil
 	case <-backend.Done():
 		return fmt.Errorf("应用后端开发进程已退出: %w", backend.Err())
-	case <-frontend.Done():
-		return fmt.Errorf("应用前端开发进程已退出: %w", watch.ExitError(frontend))
+	case err := <-exits:
+		return err
 	}
 }
 
-func waitFrontendReady(
-	ctx context.Context,
-	checker watch.HTTPChecker,
-	frontend *watch.Process,
-	backend *watch.Supervisor,
-) error {
-	result := make(chan error, 1)
-	go func() {
-		result <- checker.Wait(ctx, frontend)
-	}()
-	select {
-	case err := <-result:
-		return err
-	case <-backend.Done():
-		return fmt.Errorf("应用后端开发进程已退出: %w", backend.Err())
-	case <-ctx.Done():
-		return ctx.Err()
-	}
+type runningFrontend struct {
+	plan    FrontendPlan
+	process *watch.Process
 }
 
 func ensureEndpointsAvailable(plan Plan) error {
@@ -129,11 +143,11 @@ func ensureEndpointsAvailable(plan Plan) error {
 	}{
 		{name: "应用后端", endpoint: plan.Backend.HealthURL},
 	}
-	if plan.FrontendEnabled {
+	for _, frontend := range plan.Frontends() {
 		targets = append(targets, struct {
 			name     string
 			endpoint string
-		}{name: "应用前端", endpoint: plan.FrontendURL})
+		}{name: frontend.Name, endpoint: frontend.URL})
 	}
 	checked := make(map[string]struct{}, len(targets))
 	for _, target := range targets {
@@ -150,12 +164,15 @@ func ensureEndpointsAvailable(plan Plan) error {
 			continue
 		}
 		checked[address] = struct{}{}
-		listener, err := net.Listen("tcp", net.JoinHostPort("", port))
-		if err != nil {
-			return fmt.Errorf("%s地址不可用，无法启动本次开发进程 %s: %w", target.name, target.endpoint, err)
-		}
-		if err := listener.Close(); err != nil {
-			return fmt.Errorf("释放%s地址预检监听失败 %s: %w", target.name, target.endpoint, err)
+		// 部分系统的通配监听只覆盖 IPv6，必须同时检查配置中的具体地址。
+		for _, bindAddress := range []string{address, net.JoinHostPort("", port)} {
+			listener, err := net.Listen("tcp", bindAddress)
+			if err != nil {
+				return fmt.Errorf("%s地址不可用，无法启动本次开发进程 %s: %w", target.name, target.endpoint, err)
+			}
+			if err := listener.Close(); err != nil {
+				return fmt.Errorf("释放%s地址预检监听失败 %s: %w", target.name, target.endpoint, err)
+			}
 		}
 	}
 	return nil

@@ -346,7 +346,7 @@ plugin.manifest 省略时默认读取配置文件同目录下的 plugin.yaml，�
 sparq-tool dev app --file path/to/sparq.dev.yaml --dry-run
 ```
 
-应用配置通过 `backend.watch_file` 引用已有 `sparq.watch.yaml`，并通过 `frontend.mode`、`frontend.cwd`、`frontend.command` 和 `frontend.url` 描述前端来源与开发进程。工具自动合并 `$SPARQ_HOME/sparq-tool/config.yaml` 的用户级工具链默认值，先等待后端健康检查，再按模式启动前端；前端在 `frontend.timeout` 内没有返回 2xx 时输出警告但保持进程运行，任一进程真正退出时才清理另一进程。通用完整注释示例位于 `sparq-tool/sparq.dev.example.yaml`，Website 的实际配置位于 `platforms/sparq-website/sparq.dev.yaml`。
+应用配置通过 `backend.watch_file` 引用后端监听配置，可选 `admin` 启动独立目录的 Admin Shell，`frontend` 启动业务前端。工具合并用户级工具链默认值，等待后端就绪后启动所有启用的前端；Shell 的 API 代理可由后端地址推导，业务入口仍只取 `frontend.url`。前端健康超时只输出警告，任一进程退出或 Ctrl+C 会清理本次启动的全部进程。用法见 [dev app 命令参考](docs/commands.md#dev-app) 和 [完整配置示例](sparq.dev.example.yaml)。默认壳实际配置位于 `sparq-app/sparq.dev.yaml`，Website 配置位于 `platforms/sparq-website/sparq.dev.yaml`。
 
 ### 3.6 环境检查
 

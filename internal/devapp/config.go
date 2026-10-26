@@ -8,6 +8,7 @@ type TargetConfig = appconfig.TargetConfig
 type AppConfig = appconfig.AppConfig
 type BackendConfig = appconfig.BackendConfig
 type FrontendConfig = appconfig.FrontendConfig
+type AdminConfig = appconfig.AdminConfig
 type StopConfig = appconfig.StopConfig
 
 // LoadConfig 读取并严格解析应用联调配置。

@@ -215,17 +215,29 @@ func printAppPlan(writer io.Writer, plan devapp.Plan) {
 	fmt.Fprintf(writer, "应用后端工作目录: %s\n", plan.Backend.CWD)
 	fmt.Fprintf(writer, "应用后端命令: %s\n", plan.Backend.RunCommand)
 	fmt.Fprintf(writer, "应用后端健康检查: %s%s\n", plan.Backend.HealthURL, plan.Backend.HealthPath)
-	if plan.FrontendEnabled {
-		fmt.Fprintf(writer, "应用前端工作目录: %s\n", plan.FrontendCWD)
-		fmt.Fprintf(writer, "应用前端命令: %s %s\n", plan.FrontendCommand, strings.Join(plan.FrontendArgs, " "))
-		fmt.Fprintf(writer, "应用前端地址: %s\n", plan.FrontendURL)
-		fmt.Fprintf(writer, "应用前端就绪检查: %s\n", fallback(plan.FrontendURL+plan.FrontendHealth, "/"))
-		fmt.Fprintln(writer, "启动顺序: 应用后端 -> 应用后端健康检查 -> 应用前端 -> 应用前端就绪检查")
-	} else {
-		fmt.Fprintln(writer, "应用前端: 已按配置跳过")
-		fmt.Fprintln(writer, "启动顺序: 应用后端 -> 应用后端健康检查")
+	stages := []string{"应用后端", "应用后端健康检查"}
+	for _, frontend := range plan.Frontends() {
+		fmt.Fprintf(writer, "%s工作目录: %s\n", frontend.Name, frontend.CWD)
+		fmt.Fprintf(writer, "%s命令: %s %s\n", frontend.Name, frontend.Command, strings.Join(frontend.Args, " "))
+		fmt.Fprintf(writer, "%s地址: %s\n", frontend.Name, frontend.URL)
+		fmt.Fprintf(writer, "%s就绪检查: %s%s\n", frontend.Name, frontend.URL, frontend.Health)
+		if frontend.ConfigKey == "admin" {
+			for _, entry := range frontend.Env {
+				if target, ok := strings.CutPrefix(entry, "VITE_SPARQ_API_PROXY_TARGET="); ok {
+					fmt.Fprintf(writer, "Admin API 代理: %s\n", target)
+				}
+			}
+		}
+		stages = append(stages, frontend.Name)
 	}
-	fmt.Fprintln(writer, "退出行为: 任一开发进程退出或收到 Ctrl+C 时停止另一进程")
+	if !plan.FrontendEnabled {
+		fmt.Fprintln(writer, "应用前端: 已按配置跳过")
+	}
+	if len(plan.Frontends()) > 0 {
+		stages = append(stages, "前端就绪检查")
+	}
+	fmt.Fprintf(writer, "启动顺序: %s\n", strings.Join(stages, " -> "))
+	fmt.Fprintln(writer, "退出行为: 任一开发进程退出或收到 Ctrl+C 时停止本次启动的其余进程")
 }
 
 func fallback(value, fallback string) string {

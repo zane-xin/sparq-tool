@@ -1,12 +1,55 @@
 package devcmd
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/zane-xin/sparq-protocol/plugin"
 	"github.com/zane-xin/sparq-tool/internal/dev"
 )
+
+func TestAppDryRunWithAdmin(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv("SPARQ_HOME", root)
+	for name, contents := range map[string]string{
+		"watch.yaml": "run:\n  command: go run .\nhealth:\n  url: http://127.0.0.1:19090\n  path: /__healthz__\n",
+		"sparq.dev.yaml": `backend:
+  watch_file: watch.yaml
+admin:
+  cwd: .
+  command: pnpm dev
+  url: http://127.0.0.1:5188
+frontend:
+  mode: disabled
+`,
+	} {
+		if err := os.WriteFile(filepath.Join(root, name), []byte(contents), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	var output strings.Builder
+	command := New()
+	command.SetOut(&output)
+	command.SetErr(&output)
+	command.SetArgs([]string{"app", "--file", filepath.Join(root, "sparq.dev.yaml"), "--dry-run"})
+	if err := command.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	for _, expected := range []string{
+		"Admin Shell工作目录: " + root,
+		"Admin Shell地址: http://127.0.0.1:5188",
+		"Admin API 代理: http://127.0.0.1:19090",
+		"应用后端健康检查: http://127.0.0.1:19090/__healthz__",
+		"应用前端: 已按配置跳过",
+		"启动顺序: 应用后端 -> 应用后端健康检查 -> Admin Shell -> 前端就绪检查",
+	} {
+		if !strings.Contains(output.String(), expected) {
+			t.Fatalf("dry-run output missing %q: %s", expected, output.String())
+		}
+	}
+}
 
 func TestNewExposesPluginAppAndLifecycleModes(t *testing.T) {
 	command := New()

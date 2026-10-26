@@ -560,13 +560,24 @@ sparq-tool dev app
 sparq-tool dev app --file sparq.dev.yaml --dry-run
 ```
 
-`dev app` 用于 Sparq 二次开发应用，不读取插件 Manifest，也不请求插件开发 token 或调用 `/dev/frontend`。它读取项目 `sparq.dev.yaml`，并自动合并 `$SPARQ_HOME/sparq-tool/config.yaml` 中的用户级工具链默认值。`frontend.mode` 为 `source` 或 `source-dev` 时，工具先按 `backend.watch_file` 启动后端 watch 会话并等待后端健康检查，再启动前端开发进程并观察前端 URL 是否返回 2xx；`artifact` 或 `disabled` 时只启动后端；`source-build` 会明确报错。
+`dev app` 用于 Sparq 二次开发应用，统一启动后端、可选的 Admin Shell 和业务前端，不读取插件 Manifest，也不请求插件开发 token 或调用 `/dev/frontend`。它读取项目 `sparq.dev.yaml`，并自动合并 `$SPARQ_HOME/sparq-tool/config.yaml` 中的用户级工具链默认值。
 
-`frontend.timeout` 到期但前端进程仍在运行时，工具会输出就绪警告并继续保持本次开发会话，避免 Vite 首次依赖预构建或页面首次编译较慢时连带停止已经就绪的后端。任一进程真正退出或收到 Ctrl+C 时，工具会停止本次启动的另一进程和文件监听器。
+`admin` 描述 Admin Shell，省略时不启动 Shell；`frontend` 描述应用业务前端。两者的 `mode` 默认均为 `source`：`source`、`source-dev` 启动开发进程，`artifact`、`disabled` 跳过，`source-build` 在开发命令中明确报错。只开发默认壳与 Admin 时，将 `frontend.mode` 设为 `disabled`。
+
+下面的配置假设应用包含 `frontend/`，Admin 源码位于相邻的 `sparq-admin/`；先在两个前端目录安装依赖，再在应用根目录执行上述命令：
 
 ```yaml
 backend:
-  watch_file: app/config/sparq.watch.yaml
+  watch_file: config/sparq.watch.yaml
+
+admin:
+  mode: source-dev
+  cwd: ../sparq-admin
+  command: pnpm dev
+  url: http://127.0.0.1:5188
+  api_proxy_target: http://127.0.0.1:19090
+  env:
+    VITE_SPARQ_ADMIN_API_BASE_URL: ""
 
 frontend:
   cwd: frontend
@@ -578,9 +589,13 @@ frontend:
     kill_timeout: 2s
 ```
 
-配置文件目录是 `backend.watch_file` 和 `frontend.cwd` 的解析基准。被引用的 watch 配置必须提供 `health.url`，否则工具无法确认后端就绪后再启动前端。`frontend.url` 会通过 `SPARQ_DEV_FRONTEND_URL` 传给应用后端，应指向应用注册给 Admin Shell 的开发入口；它不需要在应用运行配置中重复声明。超时警告不表示 URL 已经可访问，仍需根据前端命令输出排查编译失败或地址配置错误。
+配置文件目录是 `backend.watch_file`、`admin.cwd` 和 `frontend.cwd` 的解析基准，前后端可以位于同一应用目录或不同仓库。两个前端命令都使用合并后的 `toolchain.frontend` 工具链。被引用的 watch 配置必须提供 `health.url`：工具先等待后端健康检查通过，再启动所有启用的前端进程，随后分别检查它们的 URL 是否返回 2xx。先启动全部前端，保证 Shell 首次请求业务模块时业务开发进程已经开始启动。
 
-`dev app` 只负责进程编排，不动态修改生产配置，也不向稳定协议增加开发字段。后端开发命令仍由 `sparq.watch.yaml` 明确声明；用户级 `toolchain.go` 不会改写其中的任意 shell 命令。应用正式构建使用独立的 `build.yaml`，不读取 `frontend.mode`。`--dry-run` 只解析、校验和打印执行计划，不检查端口占用，也不启动进程。
+`frontend.url` 通过 `SPARQ_DEV_FRONTEND_URL` 传给应用后端，指向应用注册给 Admin Shell 的业务开发入口。`admin.url` 只用于 Shell 访问和就绪检查，不会覆盖业务入口。`admin.api_proxy_target` 注入 Shell 的 `VITE_SPARQ_API_PROXY_TARGET`；省略时取后端 `health.url` 的 HTTP origin。`admin.env.VITE_SPARQ_API_PROXY_TARGET` 的显式值优先。Shell 的 API base 留空时，请求使用同源地址，由 Vite 代理到后端。
+
+`admin.timeout` 和 `frontend.timeout` 默认 30s，到期但进程仍在运行时只输出就绪警告，保留会话供首次依赖预构建或页面编译继续执行。超时警告不表示 URL 已经可访问，仍需根据前端输出排查。任一进程真正退出、前端启动失败或收到 Ctrl+C 时，工具会停止本次启动的其余进程和文件监听器；启动前会检查各进程端口冲突和端口占用，不会接管已有服务。
+
+`dev app` 只负责进程编排，不动态修改生产配置，也不向稳定协议增加开发字段。后端开发命令仍由 `sparq.watch.yaml` 明确声明；用户级 `toolchain.go` 不会改写其中的任意 shell 命令。应用正式构建使用独立的 `build.yaml`，通过 `admin.path`、`frontend.path` 选择源码，不读取开发配置的 `admin` 或 `frontend.mode`。`--dry-run` 只解析、校验和打印执行计划，不检查端口占用，也不启动进程。完整字段示例见 [sparq.dev.example.yaml](../sparq.dev.example.yaml)。
 
 ### plugin package
 

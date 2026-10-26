@@ -11,6 +11,25 @@ backend:
   # dev app 使用的后端监听配置。该文件负责后端命令、监听规则和健康检查。
   watch_file: config/sparq.watch.yaml
 
+# 需要同时开发 Admin Shell 时启用；省略整段则不启动 Shell。
+# admin:
+#   # 默认 source；source/source-dev 启动，artifact/disabled 跳过。
+#   # dev app 不接受 source-build，正式构建仍使用 build.yaml 的 admin.path。
+#   mode: source-dev
+#   cwd: ../sparq-admin
+#   command: pnpm dev
+#   url: http://127.0.0.1:5188
+#   # 默认从 backend watch 的 health.url 推导 HTTP origin。
+#   api_proxy_target: http://127.0.0.1:19090
+#   # health 省略时检查 url 本身；填写时相对 url 追加路径。
+#   health: ""
+#   env:
+#     VITE_SPARQ_ADMIN_API_BASE_URL: ""
+#   timeout: 30s
+#   stop:
+#     grace_timeout: 3s
+#     kill_timeout: 2s
+
 app:
   # Go module 目录。
   dir: .
