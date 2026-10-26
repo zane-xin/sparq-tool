@@ -245,14 +245,16 @@ spec:
 	}
 }
 
-func TestCloneFrontendDoesNotShareArtifactStyles(t *testing.T) {
+func TestCloneFrontendDoesNotShareArtifactState(t *testing.T) {
 	original := &plugin.FrontendManifest{Artifact: &plugin.FrontendArtifact{
 		Styles: []string{"frontend.css"}, Files: map[string]string{"frontend.css": "sha256-style"},
+		Icons: map[string]string{"article": "icons/article.svg"},
 	}}
 	cloned := cloneFrontend(original)
 	cloned.Artifact.Styles[0] = "changed.css"
 	cloned.Artifact.Files["frontend.css"] = "changed"
-	if original.Artifact.Styles[0] != "frontend.css" || original.Artifact.Files["frontend.css"] != "sha256-style" {
+	cloned.Artifact.Icons["article"] = "changed.svg"
+	if original.Artifact.Styles[0] != "frontend.css" || original.Artifact.Files["frontend.css"] != "sha256-style" || original.Artifact.Icons["article"] != "icons/article.svg" {
 		t.Fatalf("cloneFrontend shared artifact state: %#v", original.Artifact)
 	}
 }

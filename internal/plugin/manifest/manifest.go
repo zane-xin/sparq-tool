@@ -374,6 +374,7 @@ func cloneFrontend(frontend *plugin.FrontendManifest) *plugin.FrontendManifest {
 		artifact := *frontend.Artifact
 		artifact.Styles = append([]string(nil), frontend.Artifact.Styles...)
 		artifact.Files = cloneStringMap(frontend.Artifact.Files)
+		artifact.Icons = cloneStringMap(frontend.Artifact.Icons)
 		value.Artifact = &artifact
 	}
 	return &value

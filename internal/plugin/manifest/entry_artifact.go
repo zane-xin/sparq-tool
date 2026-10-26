@@ -81,6 +81,7 @@ func applyFrontendEntryArtifact(value *plugin.Manifest, artifact *plugin.Fronten
 	copyValue := *artifact
 	copyValue.Styles = append([]string(nil), artifact.Styles...)
 	copyValue.Files = cloneStringMap(artifact.Files)
+	copyValue.Icons = cloneStringMap(artifact.Icons)
 	value.Entries[candidates[0]].Artifact = &copyValue
 	return nil
 }

@@ -137,6 +137,7 @@ func applyGeneratedFrontendRoot(value *plugin.Manifest) {
 const frontendArtifactJSON = %s
 
 type generatedFrontendArtifact struct {
+	Icons map[string]string `+"`json:\"icons,omitempty\"`"+`
 	Version string                       `+"`json:\"version\"`"+`
 	Entry   string                       `+"`json:\"entry\"`"+`
 	Styles  []string                     `+"`json:\"styles,omitempty\"`"+`
@@ -151,7 +152,7 @@ func applyFrontendArtifacts(value *plugin.Manifest) {
 	if value.Frontend == nil {
 		return
 	}
-	value.Frontend.Artifact = &plugin.FrontendArtifact{Version: artifact.Version, Entry: artifact.Entry, Styles: artifact.Styles, Files: artifact.Files}
+	value.Frontend.Artifact = &plugin.FrontendArtifact{Version: artifact.Version, Entry: artifact.Entry, Icons: artifact.Icons, Styles: artifact.Styles, Files: artifact.Files}
 }
 `, strconv.Quote(string(artifactPayload)))
 		if enabled {

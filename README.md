@@ -674,3 +674,11 @@ make release VERSION=0.1.0
 ```
 
 依赖中的 `v0.0.0` 是尚未发布的占位版本，需要在依赖仓库发布真实 tag 后执行 `GOWORK=off go get <module>@<version>` 更新 go.mod/go.sum。本地 replace 不允许进入正式发布。源码库的 release 仅执行发布门禁，之后由维护者提交并创建版本 tag；sparq-tool 额外生成包含 CLI 与 Updater 的平台归档及 SHA256。
+
+### 前端共享模块与 SVG 图标
+
+Trusted 插件使用支持 `sharedModules` 的 `@sparqjs/vite-plugin` 配置 `createSparqTrustedRoot({ sharedModules: true })`，开发和生产均从 Admin 的 admin-v1 Import Map 复用公开 Vue、Element Plus、Schema、Plugin SDK 等入口。仅共享 Vue 的既有配置仍可使用 `sharedVue`。插件不得把共享依赖再次打包，独立 iframe 保持自己的依赖和样式。
+
+插件在 `frontend/frontend.json` 的 `icons` 声明图标名和构建目录内的相对 SVG 路径，例如 `{"icons":{"article":"icons/article.svg"}}`，源文件放入 `frontend/public/icons/article.svg`。构建工具读取 `.vite/sparq-icons.json`，验证路径、普通文件与静态 SVG 内容，再写入 artifact 的 `icons` 和 `files`。随后 Manifest 生成、源码包构建、签名和宿主安装沿用同一摘要清单。菜单使用 `cms:article`，不依赖插件页面先加载。
+
+单色 SVG 最多 64 KiB，必须声明 namespace 与合法 viewBox，不接受脚本、事件、样式、外链、use 或 foreignObject。校验失败时构建退出，不生成新的正式 artifact。宿主发布前会独立复核，Session 只读取声明和摘要。

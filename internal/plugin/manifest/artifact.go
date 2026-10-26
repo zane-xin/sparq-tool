@@ -11,6 +11,7 @@ import (
 )
 
 type frontendArtifact struct {
+	Icons   map[string]string `json:"icons,omitempty"`
 	Version string            `json:"version"`
 	Entry   string            `json:"entry"`
 	Styles  []string          `json:"styles,omitempty"`
@@ -45,7 +46,7 @@ func mergeFrontendArtifacts(manifest *plugin.Manifest, manifestPath, explicitPat
 	}
 	manifest.Frontend.Artifact = &plugin.FrontendArtifact{
 		Version: artifact.Version, Entry: artifact.Entry,
-		Styles: append([]string(nil), artifact.Styles...), Files: cloneStringMap(artifact.Files),
+		Icons: cloneStringMap(artifact.Icons), Styles: append([]string(nil), artifact.Styles...), Files: cloneStringMap(artifact.Files),
 	}
 	return artifact, nil
 }
@@ -57,6 +58,9 @@ func decodeFrontendArtifact(data []byte, artifactPath string) (*frontendArtifact
 	}
 	if strings.TrimSpace(artifact.Version) == "" || strings.TrimSpace(artifact.Entry) == "" || len(artifact.Files) == 0 {
 		return nil, fmt.Errorf("前端 artifact %s 缺少 version、entry 或 files", artifactPath)
+	}
+	if err := plugin.ValidateFrontendIcons(artifact.Icons, artifact.Files); err != nil {
+		return nil, fmt.Errorf("前端 artifact %s: %w", artifactPath, err)
 	}
 	entryDigest, ok := artifact.Files[artifact.Entry]
 	if !ok || strings.TrimSpace(entryDigest) == "" {

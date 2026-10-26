@@ -24,6 +24,7 @@ type viteManifestEntry struct {
 }
 
 type frontendEntryArtifact struct {
+	Icons  map[string]string `json:"icons,omitempty"`
 	Entry  string            `json:"entry"`
 	Styles []string          `json:"styles,omitempty"`
 	Files  map[string]string `json:"files"`
@@ -83,7 +84,11 @@ func generateFrontendEntryArtifact(frontendRoot, outputDir string) (string, erro
 	}
 	styles := append([]string(nil), entry.CSS...)
 	sort.Strings(styles)
-	artifact := frontendEntryArtifact{Entry: entry.File, Styles: styles, Files: files}
+	icons, err := readFrontendIcons(outputDir, files)
+	if err != nil {
+		return "", err
+	}
+	artifact := frontendEntryArtifact{Icons: icons, Entry: entry.File, Styles: styles, Files: files}
 	encoded, err := json.MarshalIndent(artifact, "", "  ")
 	if err != nil {
 		return "", fmt.Errorf("编码 frontend entry artifact 失败: %w", err)

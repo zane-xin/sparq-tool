@@ -27,6 +27,7 @@ type frontendBuildDescriptor struct {
 }
 
 type generatedFrontendArtifact struct {
+	Icons   map[string]string `json:"icons,omitempty"`
 	Version string            `json:"version"`
 	Entry   string            `json:"entry"`
 	Styles  []string          `json:"styles,omitempty"`
@@ -49,7 +50,12 @@ func generateFrontendArtifact(frontendRoot, outputDir string) (string, error) {
 	if err := validateFrontendBuildDescriptor(descriptor, files); err != nil {
 		return "", err
 	}
+	icons, err := readFrontendIcons(outputDir, files)
+	if err != nil {
+		return "", err
+	}
 	artifact := generatedFrontendArtifact{
+		Icons:   icons,
 		Version: packageVersion + "-" + moduleVersionDigest(files),
 		Entry:   descriptor.Entry,
 		Styles:  descriptor.Styles,
