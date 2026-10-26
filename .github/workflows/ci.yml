@@ -9,17 +9,7 @@ jobs:
       GOWORK: 'off'
     steps:
       - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - name: 配置私有 Go 依赖读取凭据
-        env:
-          SPARQ_GO_READ_TOKEN: ${{ secrets.SPARQ_GO_READ_TOKEN }}
-        run: python3 scripts/setup-private-go.py
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-      - run: python3 -m unittest discover -s scripts -p 'test_private_go.py'
       - run: make check-release
-      - name: 清理私有依赖凭据
-        if: always()
-        run: python3 scripts/setup-private-go.py cleanup
