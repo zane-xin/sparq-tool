@@ -5,7 +5,7 @@ go 1.26.1
 require (
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/spf13/cobra v1.10.2
-	github.com/zane-xin/sparq-protocol v0.0.1
+	github.com/zane-xin/sparq-protocol v0.0.2
 	golang.org/x/sys v0.47.0
 	golang.org/x/term v0.45.0
 	gopkg.in/yaml.v3 v3.0.1
