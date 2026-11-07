@@ -15,7 +15,3 @@ type StopConfig = appconfig.StopConfig
 func LoadConfig(path string) (Config, error) {
 	return appconfig.Load(path)
 }
-
-func parseConfig(content []byte) (Config, error) {
-	return appconfig.Parse(content)
-}

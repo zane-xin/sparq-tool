@@ -21,12 +21,9 @@ internal/
   artifact/                 下载、checksum 和 signature
   dev/                      插件开发配置、计划与联调会话
   plugin/
-    installer/              插件安装
-    lifecycle/              插件移除与恢复
     localplugins/           本地源码插件 Bundle 生成
     manifest/               Manifest 主清单解析、外部源文件合并、校验与生成
     scaffold/               插件和前端脚手架
-    updater/                插件更新
   process/                  本地进程操作
   release/
     build/                  app 和插件构建
@@ -78,3 +75,5 @@ rg 'github.com/spf13/cobra' internal
 ```
 
 预期无匹配。
+
+插件安装、启用、更新和恢复由宿主 `managedplugin` 管理。工具链不再维护独立的 installer、updater 或 lifecycle 安装流程；`plugin` 命令保留创建、构建、发布、下载和目录查询。

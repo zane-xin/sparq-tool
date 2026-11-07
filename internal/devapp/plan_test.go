@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/zane-xin/sparq-tool/internal/appconfig"
 	"github.com/zane-xin/sparq-tool/internal/toolchain"
 	"github.com/zane-xin/sparq-tool/internal/watch"
 )
@@ -64,9 +65,9 @@ frontend:
 }
 
 func TestParseConfigRejectsUnknownField(t *testing.T) {
-	_, err := parseConfig([]byte("backend:\n  watch: sparq.watch.yaml\n"))
+	_, err := appconfig.Parse([]byte("backend:\n  watch: sparq.watch.yaml\n"))
 	if err == nil || !strings.Contains(err.Error(), "watch") {
-		t.Fatalf("parseConfig() error = %v", err)
+		t.Fatalf("appconfig.Parse() error = %v", err)
 	}
 }
 
