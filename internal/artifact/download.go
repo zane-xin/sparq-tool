@@ -11,6 +11,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/zane-xin/sparq-tool/internal/artifact/checksum"
 )
 
 // DownloadOptions 描述产物下载参数。
@@ -114,7 +116,7 @@ func DownloadVerified(options VerifiedDownloadOptions) (DownloadResult, error) {
 	if info.Size() < 0 || uint64(info.Size()) != options.ExpectedSize {
 		return DownloadResult{}, fmt.Errorf("产物大小校验失败: 实际 %d 字节，期望 %d 字节", info.Size(), options.ExpectedSize)
 	}
-	actualSHA256, err := fileSHA256(temporaryPath)
+	actualSHA256, err := checksum.FileSHA256(temporaryPath)
 	if err != nil {
 		return DownloadResult{}, err
 	}
@@ -149,19 +151,6 @@ func downloadHTTP(ctx context.Context, client *http.Client, source string, outpu
 	}
 	defer file.Close()
 	return copyWithLimit(file, response.Body, maxBytes)
-}
-
-func fileSHA256(path string) (string, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return "", err
-	}
-	defer file.Close()
-	hash := sha256.New()
-	if _, err := io.Copy(hash, file); err != nil {
-		return "", err
-	}
-	return hex.EncodeToString(hash.Sum(nil)), nil
 }
 
 func validSHA256(value string) bool {

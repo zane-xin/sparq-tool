@@ -3,8 +3,6 @@ package packager
 import (
 	"archive/tar"
 	"compress/gzip"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -15,6 +13,8 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/zane-xin/sparq-tool/internal/artifact/checksum"
 )
 
 const (
@@ -480,7 +480,7 @@ func checksumEntries(stagingDir string) ([]checksumEntry, error) {
 		if packagePath == checksumsPath || strings.HasPrefix(packagePath, "signatures/") {
 			return nil
 		}
-		sum, err := fileSHA256(current)
+		sum, err := checksum.FileSHA256(current)
 		if err != nil {
 			return err
 		}
@@ -615,19 +615,6 @@ func addFile(writer *tar.Writer, sourceDir string, path string) error {
 	defer file.Close()
 	_, err = io.Copy(writer, file)
 	return err
-}
-
-func fileSHA256(path string) (string, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return "", err
-	}
-	defer file.Close()
-	hash := sha256.New()
-	if _, err := io.Copy(hash, file); err != nil {
-		return "", err
-	}
-	return hex.EncodeToString(hash.Sum(nil)), nil
 }
 
 func appendTrailingNewline(content []byte) []byte {

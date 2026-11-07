@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
+	"github.com/zane-xin/sparq-tool/internal/artifact/checksum"
 	"github.com/zane-xin/sparq-tool/internal/plugin/buildpipeline"
 	"github.com/zane-xin/sparq-tool/internal/plugin/manifest"
 	"github.com/zane-xin/sparq-tool/internal/plugin/sourcepack"
@@ -348,7 +349,7 @@ func runPluginPublish(command *cobra.Command, args []string, options publishOpti
 		if err := progress.item(index+1, len(packageResults), publishPackageLabel(packageResult)); err != nil {
 			return err
 		}
-		candidateSHA256, err := publishFileSHA256(packageResult.ArchivePath)
+		candidateSHA256, err := checksum.FileSHA256(packageResult.ArchivePath)
 		if err != nil {
 			return fmt.Errorf("计算候选构建包 %s 校验码失败: %w", publishPackageLabel(packageResult), err)
 		}
@@ -856,19 +857,6 @@ func invalidatePublishManifest(sourceDir string) error {
 		return fmt.Errorf("清理旧的完整 Manifest 失败: %w", err)
 	}
 	return nil
-}
-
-func publishFileSHA256(path string) (string, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return "", err
-	}
-	defer file.Close()
-	hash := sha256.New()
-	if _, err := io.Copy(hash, file); err != nil {
-		return "", err
-	}
-	return hex.EncodeToString(hash.Sum(nil)), nil
 }
 
 func publishAppNotFoundError(appCode string, endpoint string, profile string, err error) error {

@@ -29,7 +29,7 @@ func Create(paths []string) ([]Entry, error) {
 	}
 	entries := make([]Entry, 0, len(files))
 	for _, path := range files {
-		sum, err := fileSHA256(path)
+		sum, err := FileSHA256(path)
 		if err != nil {
 			return nil, err
 		}
@@ -114,7 +114,7 @@ func Verify(path string) error {
 		if !filepath.IsAbs(targetPath) {
 			targetPath = filepath.Join(baseDir, filepath.FromSlash(target))
 		}
-		actual, err := fileSHA256(targetPath)
+		actual, err := FileSHA256(targetPath)
 		if err != nil {
 			return err
 		}
@@ -166,7 +166,8 @@ func expandFiles(paths []string) ([]string, error) {
 	return files, nil
 }
 
-func fileSHA256(path string) (string, error) {
+// FileSHA256 流式计算文件摘要，供下载校验、打包和发布共用。
+func FileSHA256(path string) (string, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return "", err
