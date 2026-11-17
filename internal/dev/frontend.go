@@ -3,7 +3,7 @@ package dev
 import (
 	"bytes"
 	"context"
-	"encoding/json"
+	"encoding/json/v2"
 	"errors"
 	"fmt"
 	"net/http"
@@ -58,7 +58,7 @@ func requestDevToken(ctx context.Context, endpoint, devSecret, pluginID string) 
 		return devTokenResponse{}, fmt.Errorf("开发态 token 接口返回 HTTP %d", response.StatusCode)
 	}
 	var token devTokenResponse
-	if err := json.NewDecoder(response.Body).Decode(&token); err != nil {
+	if err := json.UnmarshalRead(response.Body, &token); err != nil {
 		return devTokenResponse{}, err
 	}
 	if token.Token == "" || token.ExpiresAt == "" {

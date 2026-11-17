@@ -4,7 +4,8 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
+	"encoding/json/jsontext"
+	"encoding/json/v2"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -28,7 +29,7 @@ type State struct {
 	IdempotencyKey    string `json:"idempotency_key"`
 	SourceFingerprint string `json:"source_fingerprint,omitempty"`
 	SourceSHA256      string `json:"source_sha256,omitempty"`
-	SourceUploadID    uint64 `json:"source_upload_id,omitempty"`
+	SourceUploadID    uint64 `json:"source_upload_id,omitzero"`
 	UpdatedAt         string `json:"updated_at"`
 }
 
@@ -95,7 +96,7 @@ func Save(state State) error {
 	if err := os.Chmod(directory, 0o700); err != nil {
 		return fmt.Errorf("设置发布恢复状态目录权限失败: %w", err)
 	}
-	body, err := json.MarshalIndent(state, "", "  ")
+	body, err := json.Marshal(state, jsontext.WithIndentPrefix(""), jsontext.WithIndent("  "), json.Deterministic(true))
 	if err != nil {
 		return fmt.Errorf("编码发布恢复状态失败: %w", err)
 	}

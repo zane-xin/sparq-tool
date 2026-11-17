@@ -6,7 +6,8 @@ import (
 	"compress/gzip"
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
+	"encoding/json/jsontext"
+	"encoding/json/v2"
 	"errors"
 	"fmt"
 	"io"
@@ -207,7 +208,7 @@ func writeBundleMetadata(root string, target releasebuild.Platform, version stri
 		return err
 	}
 	manifest := Manifest{Format: Format, Version: version, TargetOS: target.OS, TargetArch: target.Arch, Files: files}
-	body, err := json.MarshalIndent(manifest, "", "  ")
+	body, err := json.Marshal(manifest, jsontext.WithIndentPrefix(""), jsontext.WithIndent("  "), json.Deterministic(true))
 	if err != nil {
 		return fmt.Errorf("编码 app bundle manifest 失败: %w", err)
 	}

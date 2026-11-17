@@ -5,7 +5,7 @@ import (
 	"compress/gzip"
 	"crypto/ed25519"
 	"crypto/x509"
-	"encoding/json"
+	"encoding/json/v2"
 	"encoding/pem"
 	"os"
 	"path/filepath"

@@ -3,7 +3,8 @@ package release
 import (
 	"bytes"
 	"context"
-	"encoding/json"
+	"encoding/json/jsontext"
+	"encoding/json/v2"
 	"errors"
 	"fmt"
 	"io"
@@ -43,9 +44,9 @@ type PublishResult struct {
 }
 
 type responseEnvelope struct {
-	Code    int             `json:"code"`
-	Data    json.RawMessage `json:"data"`
-	Message string          `json:"message"`
+	Code    int            `json:"code"`
+	Data    jsontext.Value `json:"data"`
+	Message string         `json:"message"`
 }
 
 func NewClient(httpClient *http.Client) Client {

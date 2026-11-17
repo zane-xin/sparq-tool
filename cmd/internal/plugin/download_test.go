@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
+	"encoding/json/v2"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -27,7 +27,7 @@ func TestDownloadCommandResolvesAndVerifiesLocalCapsule(t *testing.T) {
 				t.Fatalf("authorization = %q", request.Header.Get("Authorization"))
 			}
 			var input map[string]any
-			if err := json.NewDecoder(request.Body).Decode(&input); err != nil {
+			if err := json.UnmarshalRead(request.Body, &input); err != nil {
 				t.Fatal(err)
 			}
 			if input["artifact_kind"] != "local_source_capsule" {

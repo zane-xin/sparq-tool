@@ -3,7 +3,8 @@ package auth
 import (
 	"bytes"
 	"context"
-	"encoding/json"
+	"encoding/json/jsontext"
+	"encoding/json/v2"
 	"errors"
 	"fmt"
 	"io"
@@ -76,9 +77,9 @@ type currentAccount struct {
 }
 
 type responseEnvelope struct {
-	Code    int             `json:"code"`
-	Data    json.RawMessage `json:"data"`
-	Message string          `json:"message"`
+	Code    int            `json:"code"`
+	Data    jsontext.Value `json:"data"`
+	Message string         `json:"message"`
 }
 
 // Login 使用 Website 用户中心创建用户 Session。

@@ -3,7 +3,8 @@ package buildpipeline
 import (
 	"bytes"
 	"context"
-	"encoding/json"
+	"encoding/json/jsontext"
+	"encoding/json/v2"
 	"errors"
 	"fmt"
 	"io"
@@ -211,7 +212,7 @@ func resolveManifest(ctx context.Context, root, manifestPath string, item manife
 		if err := manifest.MergeFrontendEntryArtifact(&protocolManifest, manifestPath); err != nil {
 			return protocolplugin.Manifest{}, fmt.Errorf("合并插件 frontend entry artifact 失败: %w", err)
 		}
-		payload, err = json.MarshalIndent(protocolManifest, "", "  ")
+		payload, err = json.Marshal(protocolManifest, jsontext.WithIndentPrefix(""), jsontext.WithIndent("  "), json.Deterministic(true))
 		if err != nil {
 			return protocolplugin.Manifest{}, fmt.Errorf("编码插件基础 Manifest 失败: %w", err)
 		}
@@ -241,7 +242,7 @@ func exportManifest(ctx context.Context, root string, item manifest.Manifest, ex
 		return "", err
 	}
 	output := filepath.Join(root, "release", "manifest.json")
-	encoded, err := json.MarshalIndent(complete, "", "  ")
+	encoded, err := json.Marshal(complete, jsontext.WithIndentPrefix(""), jsontext.WithIndent("  "), json.Deterministic(true))
 	if err != nil {
 		return "", fmt.Errorf("编码插件完整 Manifest 失败: %w", err)
 	}
@@ -287,14 +288,14 @@ func runGeneratedManifestCommand(ctx context.Context, root string) ([]byte, erro
 	source := fmt.Sprintf(`package main
 
 import (
-	"encoding/json"
+	"encoding/json/v2"
 	"os"
 
 	pluginroot %q
 )
 
 func main() {
-	if err := json.NewEncoder(os.Stdout).Encode(pluginroot.Manifest()); err != nil {
+	if err := json.MarshalWrite(os.Stdout, pluginroot.Manifest()); err != nil {
 		panic(err)
 	}
 }

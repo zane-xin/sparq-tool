@@ -1,7 +1,8 @@
 package auth
 
 import (
-	"encoding/json"
+	"encoding/json/jsontext"
+	"encoding/json/v2"
 	"errors"
 	"fmt"
 	"os"
@@ -162,7 +163,7 @@ func resolveConfigPath(configPath string) (string, error) {
 }
 
 func writeConfig(path string, config Config) error {
-	data, err := json.MarshalIndent(config, "", "  ")
+	data, err := json.Marshal(config, jsontext.WithIndentPrefix(""), jsontext.WithIndent("  "), json.Deterministic(true))
 	if err != nil {
 		return fmt.Errorf("编码认证配置失败: %w", err)
 	}

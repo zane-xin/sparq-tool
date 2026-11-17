@@ -1,7 +1,8 @@
 package plugincmd
 
 import (
-	"encoding/json"
+	"encoding/json/jsontext"
+	"encoding/json/v2"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -124,7 +125,7 @@ func packageManifestJSON(item manifest.Manifest, root, source string) ([]byte, e
 		if err != nil {
 			return nil, fmt.Errorf("转换插件协议清单失败: %w", err)
 		}
-		value, err := json.MarshalIndent(protocolManifest, "", "  ")
+		value, err := json.Marshal(protocolManifest, jsontext.WithIndentPrefix(""), jsontext.WithIndent("  "), json.Deterministic(true))
 		if err != nil {
 			return nil, fmt.Errorf("编码插件协议清单失败: %w", err)
 		}
@@ -144,7 +145,7 @@ func packageManifestJSON(item manifest.Manifest, root, source string) ([]byte, e
 	if string(value.Code) != item.Metadata.Code || value.Version != item.Metadata.Version {
 		return nil, fmt.Errorf("完整插件协议清单身份不一致: 得到 %s@%s，主清单要求 %s@%s", value.Code, value.Version, item.Metadata.Code, item.Metadata.Version)
 	}
-	result, err := json.MarshalIndent(value, "", "  ")
+	result, err := json.Marshal(value, jsontext.WithIndentPrefix(""), jsontext.WithIndent("  "), json.Deterministic(true))
 	if err != nil {
 		return nil, fmt.Errorf("编码完整插件协议清单失败: %w", err)
 	}

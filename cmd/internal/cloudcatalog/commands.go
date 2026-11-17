@@ -1,7 +1,8 @@
 package cloudcatalog
 
 import (
-	"encoding/json"
+	"encoding/json/jsontext"
+	"encoding/json/v2"
 	"fmt"
 	"net/http"
 	"strings"
@@ -108,9 +109,8 @@ func NewInfoCommand(resource Resource) *cobra.Command {
 				return err
 			}
 			if commandOptions.json {
-				encoder := json.NewEncoder(command.OutOrStdout())
-				encoder.SetIndent("", "  ")
-				return encoder.Encode(entry)
+				encoder := jsontext.NewEncoder(command.OutOrStdout(), jsontext.WithIndent("  "))
+				return json.MarshalEncode(encoder, entry)
 			}
 			_, err = fmt.Fprintf(command.OutOrStdout(), "编码: %s\n名称: %s\n简介: %s\n分类: %s\n当前版本: %s\n下载量: %d\n评分: %.2f (%d)\n", entry.Code, entry.Name, entry.Summary, entry.Category, entry.CurrentVersion, entry.DownloadCount, entry.RatingScore, entry.RatingCount)
 			return err
@@ -225,9 +225,8 @@ func clientFor(commandOptions options) (remotemarketplace.Client, remoteauth.Ses
 
 func writeCatalog(command *cobra.Command, entries []catalogEntry, asJSON bool, resourceName string) error {
 	if asJSON {
-		encoder := json.NewEncoder(command.OutOrStdout())
-		encoder.SetIndent("", "  ")
-		return encoder.Encode(entries)
+		encoder := jsontext.NewEncoder(command.OutOrStdout(), jsontext.WithIndent("  "))
+		return json.MarshalEncode(encoder, entries)
 	}
 	if len(entries) == 0 {
 		_, err := fmt.Fprintln(command.OutOrStdout(), "未找到线上"+resourceName)

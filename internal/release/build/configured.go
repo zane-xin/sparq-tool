@@ -2,7 +2,8 @@ package build
 
 import (
 	"bytes"
-	"encoding/json"
+	"encoding/json/jsontext"
+	"encoding/json/v2"
 	"errors"
 	"fmt"
 	"os"
@@ -465,7 +466,7 @@ func writeBuildManifest(output string, config BuildConfig, options AppOptions, t
 		components = append(components, "frontend")
 	}
 	sort.Strings(components)
-	payload, err := json.MarshalIndent(buildManifest{Format: "sparq.app.build.v1", Version: version, GitHash: gitHash, GitDirty: dirty, BuiltAt: time.Now().UTC().Format(time.RFC3339), Targets: targets, Components: components}, "", "  ")
+	payload, err := json.Marshal(buildManifest{Format: "sparq.app.build.v1", Version: version, GitHash: gitHash, GitDirty: dirty, BuiltAt: time.Now().UTC().Format(time.RFC3339), Targets: targets, Components: components}, jsontext.WithIndentPrefix(""), jsontext.WithIndent("  "), json.Deterministic(true))
 	if err != nil {
 		return err
 	}

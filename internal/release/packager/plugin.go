@@ -3,7 +3,8 @@ package packager
 import (
 	"archive/tar"
 	"compress/gzip"
-	"encoding/json"
+	"encoding/json/jsontext"
+	"encoding/json/v2"
 	"fmt"
 	"io"
 	"os"
@@ -139,7 +140,7 @@ type releaseJSON struct {
 	Plugin      releasePluginJSON    `json:"plugin"`
 	Protocol    releaseProtocolJSON  `json:"protocol"`
 	Artifacts   releaseArtifactsJSON `json:"artifacts"`
-	Delivery    *releaseDeliveryJSON `json:"delivery,omitempty"`
+	Delivery    *releaseDeliveryJSON `json:"delivery,omitzero"`
 	SourceFiles []string             `json:"source_files"`
 	CreatedAt   string               `json:"created_at"`
 	Tool        releaseToolJSON      `json:"tool"`
@@ -241,7 +242,7 @@ func stagePackage(stagingDir string, sourceDir string, metadata pluginPackageMet
 			TargetOS: metadata.TargetOS, TargetArch: metadata.TargetArch,
 		}
 	}
-	releaseBody, err := json.MarshalIndent(releaseMetadata, "", "  ")
+	releaseBody, err := json.Marshal(releaseMetadata, jsontext.WithIndentPrefix(""), jsontext.WithIndent("  "), json.Deterministic(true))
 	if err != nil {
 		return stagedRelease{}, fmt.Errorf("编码插件发布元数据失败: %w", err)
 	}

@@ -3,7 +3,8 @@ package updater
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
+	"encoding/json/jsontext"
+	"encoding/json/v2"
 	"errors"
 	"fmt"
 	"io"
@@ -32,12 +33,12 @@ func ReadPlan(path string) (Plan, error) {
 		return Plan{}, err
 	}
 	var plan Plan
-	decoder := json.NewDecoder(strings.NewReader(string(body)))
-	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(&plan); err != nil {
+	decoder := jsontext.NewDecoder(strings.NewReader(string(body)))
+
+	if err := json.UnmarshalDecode(decoder, &plan, json.RejectUnknownMembers(true)); err != nil {
 		return Plan{}, fmt.Errorf("decode update plan: %w", err)
 	}
-	if err := decoder.Decode(&struct{}{}); err == nil {
+	if err := json.UnmarshalDecode(decoder, &struct{}{}, json.RejectUnknownMembers(true)); err == nil {
 		return Plan{}, fmt.Errorf("update plan contains trailing JSON")
 	} else if err != io.EOF {
 		return Plan{}, fmt.Errorf("decode update plan trailing data: %w", err)

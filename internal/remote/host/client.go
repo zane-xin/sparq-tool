@@ -3,7 +3,8 @@ package host
 import (
 	"bytes"
 	"context"
-	"encoding/json"
+	"encoding/json/jsontext"
+	"encoding/json/v2"
 	"fmt"
 	"io"
 	"net/http"
@@ -25,7 +26,7 @@ type Artifact struct {
 	URL       string `json:"url"`
 	SHA256    string `json:"sha256"`
 	SizeBytes uint64 `json:"size_bytes"`
-	ExpiresAt int64  `json:"expires_at,omitempty"`
+	ExpiresAt int64  `json:"expires_at,omitzero"`
 	Format    string `json:"format,omitempty"`
 }
 
@@ -189,9 +190,9 @@ func (client Client) request(ctx context.Context, credentials Credentials, metho
 		return fmt.Errorf("宿主管理 API 响应过大")
 	}
 	var envelope struct {
-		Code    int             `json:"code"`
-		Data    json.RawMessage `json:"data"`
-		Message string          `json:"message"`
+		Code    int            `json:"code"`
+		Data    jsontext.Value `json:"data"`
+		Message string         `json:"message"`
 	}
 	if err := json.Unmarshal(payload, &envelope); err != nil {
 		return fmt.Errorf("解析宿主管理 API 响应失败: %w", err)

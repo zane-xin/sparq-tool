@@ -6,7 +6,8 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
-	"encoding/json"
+	"encoding/json/jsontext"
+	"encoding/json/v2"
 	"errors"
 	"fmt"
 	"io"
@@ -194,7 +195,7 @@ func Package(options PackageOptions) (PackageResult, error) {
 		return PackageResult{}, fmt.Errorf("生成发行清单失败: %w", err)
 	}
 	manifestPath := filepath.Join(staging, "manifest.json")
-	encoded, err := json.MarshalIndent(manifest, "", "  ")
+	encoded, err := json.Marshal(manifest, jsontext.WithIndentPrefix(""), jsontext.WithIndent("  "), json.Deterministic(true))
 	if err != nil {
 		return PackageResult{}, err
 	}

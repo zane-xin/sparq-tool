@@ -2,7 +2,8 @@ package manifest
 
 import (
 	"bytes"
-	"encoding/json"
+	"encoding/json/jsontext"
+	"encoding/json/v2"
 	"fmt"
 	"io"
 	"os"
@@ -95,14 +96,14 @@ func readSchemaResourceFile(filename string) (SchemaResourceContributionManifest
 	if err != nil {
 		return SchemaResourceContributionManifest{}, fmt.Errorf("读取外部 Schema Resource %s: %w", filename, err)
 	}
-	decoder := json.NewDecoder(bytes.NewReader(data))
-	decoder.DisallowUnknownFields()
+	decoder := jsontext.NewDecoder(bytes.NewReader(data))
+
 	var resource SchemaResourceContributionManifest
-	if err := decoder.Decode(&resource); err != nil {
+	if err := json.UnmarshalDecode(decoder, &resource, json.RejectUnknownMembers(true)); err != nil {
 		return SchemaResourceContributionManifest{}, fmt.Errorf("解析外部 Schema Resource %s: %w", filename, err)
 	}
 	var trailing any
-	if err := decoder.Decode(&trailing); err != io.EOF {
+	if err := json.UnmarshalDecode(decoder, &trailing, json.RejectUnknownMembers(true)); err != io.EOF {
 		if err == nil {
 			return SchemaResourceContributionManifest{}, fmt.Errorf("解析外部 Schema Resource %s: 只能包含一个 JSON 对象", filename)
 		}

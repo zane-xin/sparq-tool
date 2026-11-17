@@ -1,7 +1,8 @@
 package manifest
 
 import (
-	"encoding/json"
+	"encoding/json/jsontext"
+	"encoding/json/v2"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -66,7 +67,7 @@ type Spec struct {
 	Lifecycle      plugin.LifecycleManifest            `json:"lifecycle,omitempty" yaml:"lifecycle,omitempty"`
 	Components     []plugin.ComponentManifest          `json:"components,omitempty" yaml:"components,omitempty"`
 	Entries        []plugin.EntryManifest              `json:"entries,omitempty" yaml:"entries,omitempty"`
-	Frontend       *plugin.FrontendManifest            `json:"frontend,omitempty" yaml:"frontend,omitempty"`
+	Frontend       *plugin.FrontendManifest            `json:"frontend,omitzero" yaml:"frontend,omitempty"`
 	Capabilities   []plugin.FrontendCapability         `json:"capabilities,omitempty" yaml:"capabilities,omitempty"`
 	Contributions  ContributionManifest                `json:"contributions,omitempty" yaml:"contributions,omitempty"`
 	Provides       CapabilitySet                       `json:"provides,omitempty" yaml:"provides,omitempty"`
@@ -138,7 +139,7 @@ type MenuItemContributionManifest struct {
 	Visible               bool                  `json:"visible" yaml:"visible"`
 	Enabled               bool                  `json:"enabled" yaml:"enabled"`
 	EntryCode             string                `json:"entry_code,omitempty" yaml:"entry_code,omitempty"`
-	EntryPayload          any                   `json:"entry_payload,omitempty" yaml:"entry_payload,omitempty"`
+	EntryPayload          any                   `json:"entry_payload,omitzero" yaml:"entry_payload,omitempty"`
 	FeatureCode           string                `json:"feature_code,omitempty" yaml:"feature_code,omitempty"`
 	EntryPermissionAction string                `json:"entry_permission_action,omitempty" yaml:"entry_permission_action,omitempty"`
 }
@@ -425,18 +426,18 @@ func (input ContributionManifest) protocolManifest() (plugin.ContributionManifes
 	return output, nil
 }
 
-func encodeEntryPayload(value any) (json.RawMessage, error) {
+func encodeEntryPayload(value any) (jsontext.Value, error) {
 	if value == nil {
 		return nil, nil
 	}
-	if text, ok := value.(string); ok && json.Valid([]byte(text)) {
-		return json.RawMessage(text), nil
+	if text, ok := value.(string); ok && jsontext.Value([]byte(text)).IsValid() {
+		return jsontext.Value(text), nil
 	}
 	encoded, err := json.Marshal(value)
 	if err != nil {
 		return nil, err
 	}
-	return json.RawMessage(encoded), nil
+	return jsontext.Value(encoded), nil
 }
 
 func toolManifestPath(path string) string {

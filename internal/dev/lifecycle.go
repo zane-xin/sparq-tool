@@ -5,7 +5,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
+	"encoding/json/v2"
 	"errors"
 	"fmt"
 	"io"
@@ -26,7 +26,7 @@ type LifecycleSessionRequest struct {
 	ManifestDigest string `json:"manifest_digest"`
 	// 空数组表示插件明确没有可选生命周期阶段，不能省略为旧客户端语义。
 	Operations []string `json:"operations"`
-	TTLSeconds int      `json:"ttl_seconds,omitempty"`
+	TTLSeconds int      `json:"ttl_seconds,omitzero"`
 }
 
 type LifecycleSession struct {
@@ -63,7 +63,7 @@ type LifecycleRevokeRequest struct {
 
 type LifecycleRenewRequest struct {
 	SessionID  string `json:"session_id"`
-	TTLSeconds int    `json:"ttl_seconds,omitempty"`
+	TTLSeconds int    `json:"ttl_seconds,omitzero"`
 }
 
 // RequestLifecycleSession asks the development host for a transient backend session.
@@ -281,7 +281,7 @@ func postJSON(ctx context.Context, endpoint, path, devSecret string, input, outp
 		return fmt.Errorf("开发生命周期接口返回 HTTP %d", response.StatusCode)
 	}
 	if output != nil {
-		if err := json.NewDecoder(response.Body).Decode(output); err != nil {
+		if err := json.UnmarshalRead(response.Body, output); err != nil {
 			return err
 		}
 	}

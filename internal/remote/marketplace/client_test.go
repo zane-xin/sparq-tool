@@ -2,7 +2,7 @@ package marketplace
 
 import (
 	"context"
-	"encoding/json"
+	"encoding/json/v2"
 	"errors"
 	"io"
 	"net/http"
@@ -80,7 +80,7 @@ func TestClientPreflightsAndCancelsPluginPublish(t *testing.T) {
 				t.Fatalf("preflight request = %s %+v", request.Method, request.Header)
 			}
 			var body map[string]string
-			if err := json.NewDecoder(request.Body).Decode(&body); err != nil || body["version"] != "1.2.3" || body["changelog"] != "版本说明" {
+			if err := json.UnmarshalRead(request.Body, &body); err != nil || body["version"] != "1.2.3" || body["changelog"] != "版本说明" {
 				t.Fatalf("preflight body = %+v, %v", body, err)
 			}
 			_, _ = writer.Write([]byte(`{"code":0,"data":{"application_id":7,"application_code":"cms","version":"1.2.3","resumable_upload":{"id":8,"version_id":9,"version":"1.2.3","status":"uploading"}}}`))
@@ -175,7 +175,7 @@ func TestClientReadsAndFinalizesPublishSessions(t *testing.T) {
 			var body struct {
 				Candidates []CandidateExpectation `json:"candidates"`
 			}
-			if err := json.NewDecoder(request.Body).Decode(&body); err != nil || len(body.Candidates) != 1 ||
+			if err := json.UnmarshalRead(request.Body, &body); err != nil || len(body.Candidates) != 1 ||
 				body.Candidates[0].Kind != ArtifactKindManagedRemote || body.Candidates[0].SHA256 != "candidate-digest" {
 				t.Fatalf("application finalize body = %+v, %v", body, err)
 			}
@@ -243,7 +243,7 @@ func TestClientResolvesPluginDownload(t *testing.T) {
 			t.Fatalf("authorization = %q", request.Header.Get("Authorization"))
 		}
 		var body map[string]any
-		if err := json.NewDecoder(request.Body).Decode(&body); err != nil {
+		if err := json.UnmarshalRead(request.Body, &body); err != nil {
 			t.Fatal(err)
 		}
 		if body["application_code"] != "cms" || body["artifact_kind"] != "local_source_capsule" {
@@ -272,7 +272,7 @@ func TestClientCreatesApplicationInstallGrant(t *testing.T) {
 			t.Fatalf("request = %s %s", request.Method, request.URL.Path)
 		}
 		var body map[string]map[string]any
-		if err := json.NewDecoder(request.Body).Decode(&body); err != nil {
+		if err := json.UnmarshalRead(request.Body, &body); err != nil {
 			t.Fatal(err)
 		}
 		if body["download"]["application_code"] != "cms" || body["download"]["artifact_kind"] != ArtifactKindManagedRemote || body["download"]["target"].(map[string]any)["app_instance_id"] != "site-1" {
@@ -301,7 +301,7 @@ func TestClientResolvesTemplateDownloadAndCreatesTemplateInstallGrant(t *testing
 		switch request.URL.Path {
 		case "/cloud-api/v1/template-downloads/resolve":
 			var body map[string]any
-			if err := json.NewDecoder(request.Body).Decode(&body); err != nil {
+			if err := json.UnmarshalRead(request.Body, &body); err != nil {
 				t.Fatal(err)
 			}
 			if request.Method != http.MethodPost || body["template_code"] != "studio" || body["version"] != "latest" {
@@ -310,7 +310,7 @@ func TestClientResolvesTemplateDownloadAndCreatesTemplateInstallGrant(t *testing
 			_, _ = writer.Write([]byte(`{"code":0,"data":{"template":{"id":4,"code":"studio","name":"Studio","version_id":5,"release_id":6,"version":"1.0.0"},"authorization":{"allowed":true,"license_id":9},"artifact":{"available":true,"id":12,"template_id":4,"template_version_id":5,"template_release_id":6,"kind":"template_source","format":"zip","filename":"studio.zip","size_bytes":8,"sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","download_url":"https://objects.example.test/studio","expires_at":100}}}`))
 		case "/cloud-api/v1/template-install-grants":
 			var body map[string]any
-			if err := json.NewDecoder(request.Body).Decode(&body); err != nil {
+			if err := json.UnmarshalRead(request.Body, &body); err != nil {
 				t.Fatal(err)
 			}
 			download := body["download"].(map[string]any)
@@ -391,7 +391,7 @@ func TestClientCreatesAndReadsSalesPlanOrder(t *testing.T) {
 		switch {
 		case request.Method == http.MethodPost && request.URL.Path == "/cloud-api/v1/orders":
 			var body map[string]any
-			if err := json.NewDecoder(request.Body).Decode(&body); err != nil {
+			if err := json.UnmarshalRead(request.Body, &body); err != nil {
 				t.Fatal(err)
 			}
 			items, ok := body["items"].([]any)

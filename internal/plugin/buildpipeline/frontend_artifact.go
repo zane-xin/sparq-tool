@@ -3,7 +3,8 @@ package buildpipeline
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
+	"encoding/json/jsontext"
+	"encoding/json/v2"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -89,7 +90,7 @@ func generateFrontendEntryArtifact(frontendRoot, outputDir string) (string, erro
 		return "", err
 	}
 	artifact := frontendEntryArtifact{Icons: icons, Entry: entry.File, Styles: styles, Files: files}
-	encoded, err := json.MarshalIndent(artifact, "", "  ")
+	encoded, err := json.Marshal(artifact, jsontext.WithIndentPrefix(""), jsontext.WithIndent("  "), json.Deterministic(true))
 	if err != nil {
 		return "", fmt.Errorf("编码 frontend entry artifact 失败: %w", err)
 	}

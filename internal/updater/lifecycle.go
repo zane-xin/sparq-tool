@@ -1,7 +1,8 @@
 package updater
 
 import (
-	"encoding/json"
+	"encoding/json/jsontext"
+	"encoding/json/v2"
 	"errors"
 	"fmt"
 	"io"
@@ -87,7 +88,7 @@ func writeUpdaterInstallationMetadata(plan Plan) error {
 		return err
 	}
 	installation := protocolrelease.UpdaterInstallation{Format: protocolrelease.UpdaterInstallationFormat, Version: plan.Transaction.Updater.Version, TargetOS: runtime.GOOS, TargetArch: runtime.GOARCH, SHA256: digest, ReleaseSHA256: updaterArtifact.ReleaseSHA256, InstalledAt: time.Now().UTC()}
-	body, err := json.MarshalIndent(installation, "", "  ")
+	body, err := json.Marshal(installation, jsontext.WithIndentPrefix(""), jsontext.WithIndent("  "), json.Deterministic(true))
 	if err != nil {
 		return err
 	}
@@ -145,7 +146,7 @@ func persistTransaction(plan Plan, status protocolrelease.UpdateStatus, cause er
 			transaction.FailureReason = cause.Error()
 		}
 	}
-	body, err := json.MarshalIndent(transaction, "", "  ")
+	body, err := json.Marshal(transaction, jsontext.WithIndentPrefix(""), jsontext.WithIndent("  "), json.Deterministic(true))
 	if err != nil {
 		return err
 	}
@@ -244,12 +245,12 @@ func readConfirmation(path string) (protocolrelease.UpdateConfirmation, error) {
 		return protocolrelease.UpdateConfirmation{}, err
 	}
 	var confirmation protocolrelease.UpdateConfirmation
-	decoder := json.NewDecoder(strings.NewReader(string(body)))
-	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(&confirmation); err != nil {
+	decoder := jsontext.NewDecoder(strings.NewReader(string(body)))
+
+	if err := json.UnmarshalDecode(decoder, &confirmation, json.RejectUnknownMembers(true)); err != nil {
 		return confirmation, fmt.Errorf("decode update confirmation: %w", err)
 	}
-	if err := decoder.Decode(&struct{}{}); err != io.EOF {
+	if err := json.UnmarshalDecode(decoder, &struct{}{}, json.RejectUnknownMembers(true)); err != io.EOF {
 		return confirmation, fmt.Errorf("update confirmation must contain one JSON object")
 	}
 	return confirmation, nil

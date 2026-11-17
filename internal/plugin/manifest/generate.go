@@ -2,7 +2,7 @@ package manifest
 
 import (
 	"bytes"
-	"encoding/json"
+	"encoding/json/v2"
 	"fmt"
 	"go/ast"
 	"go/format"
@@ -85,7 +85,7 @@ func GenerateGo(options GoGenerateOptions) (GoGenerateResult, error) {
 	if !token.IsIdentifier(packageName) {
 		return GoGenerateResult{}, fmt.Errorf("插件 Go package 名称无效: %q", packageName)
 	}
-	payload, err := json.Marshal(protocolManifest)
+	payload, err := json.Marshal(protocolManifest, json.Deterministic(true))
 	if err != nil {
 		return GoGenerateResult{}, fmt.Errorf("编码插件 %s protocol manifest: %w", item.Metadata.Code, err)
 	}
@@ -129,7 +129,7 @@ func applyGeneratedFrontendRoot(value *plugin.Manifest) {
 	}
 	artifactSource := ""
 	if artifacts != nil {
-		artifactPayload, marshalErr := json.Marshal(artifacts)
+		artifactPayload, marshalErr := json.Marshal(artifacts, json.Deterministic(true))
 		if marshalErr != nil {
 			return GoGenerateResult{}, fmt.Errorf("编码插件 %s frontend artifact: %w", item.Metadata.Code, marshalErr)
 		}
@@ -162,7 +162,7 @@ func applyFrontendArtifacts(value *plugin.Manifest) {
 		}
 	}
 	if entryArtifact != nil {
-		entryPayload, marshalErr := json.Marshal(entryArtifact)
+		entryPayload, marshalErr := json.Marshal(entryArtifact, json.Deterministic(true))
 		if marshalErr != nil {
 			return GoGenerateResult{}, fmt.Errorf("编码插件 %s frontend entry artifact: %w", item.Metadata.Code, marshalErr)
 		}
@@ -203,7 +203,7 @@ func applyFrontendEntryArtifact(value *plugin.Manifest) {
 package %s
 
 import (
-	"encoding/json"
+	"encoding/json/v2"
 
 	"github.com/zane-xin/sparq-protocol/plugin"
 %s

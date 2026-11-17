@@ -2,7 +2,7 @@ package auth
 
 import (
 	"context"
-	"encoding/json"
+	"encoding/json/v2"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -16,7 +16,7 @@ func TestClientLoginCurrentAccountAndLogout(t *testing.T) {
 		switch request.Method + " " + request.URL.Path {
 		case "POST /cloud-api/usercenter/v1/sessions":
 			var input loginRequest
-			if err := json.NewDecoder(request.Body).Decode(&input); err != nil {
+			if err := json.UnmarshalRead(request.Body, &input); err != nil {
 				t.Fatalf("decode login request: %v", err)
 			}
 			if input.IdentifierType != "email" || input.Identifier != "user@example.com" || input.Password != "secret" {

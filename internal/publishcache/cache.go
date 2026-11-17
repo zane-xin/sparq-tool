@@ -3,7 +3,8 @@ package publishcache
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
+	"encoding/json/jsontext"
+	"encoding/json/v2"
 	"fmt"
 	"io"
 	"os"
@@ -335,7 +336,7 @@ func fileDigest(path string) (string, int64, error) {
 }
 
 func writeManifest(path string, snapshot Snapshot) error {
-	body, err := json.MarshalIndent(snapshot, "", "  ")
+	body, err := json.Marshal(snapshot, jsontext.WithIndentPrefix(""), jsontext.WithIndent("  "), json.Deterministic(true))
 	if err != nil {
 		return fmt.Errorf("编码候选包缓存清单失败: %w", err)
 	}

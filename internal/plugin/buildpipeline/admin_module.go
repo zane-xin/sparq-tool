@@ -4,7 +4,8 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
-	"encoding/json"
+	"encoding/json/jsontext"
+	"encoding/json/v2"
 	"fmt"
 	"io/fs"
 	"os"
@@ -61,7 +62,7 @@ func generateFrontendArtifact(frontendRoot, outputDir string) (string, error) {
 		Styles:  descriptor.Styles,
 		Files:   files,
 	}
-	body, err := json.MarshalIndent(artifact, "", "  ")
+	body, err := json.Marshal(artifact, jsontext.WithIndentPrefix(""), jsontext.WithIndent("  "), json.Deterministic(true))
 	if err != nil {
 		return "", fmt.Errorf("编码 frontend artifact 失败: %w", err)
 	}

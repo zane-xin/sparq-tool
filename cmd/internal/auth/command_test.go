@@ -2,7 +2,7 @@ package authcmd
 
 import (
 	"bytes"
-	"encoding/json"
+	"encoding/json/v2"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -20,7 +20,7 @@ func TestAuthCommandLoginStatusWhoAmIAndLogout(t *testing.T) {
 			var input struct {
 				IdentifierType string `json:"identifier_type"`
 			}
-			if err := json.NewDecoder(request.Body).Decode(&input); err != nil {
+			if err := json.UnmarshalRead(request.Body, &input); err != nil {
 				t.Errorf("decode login request: %v", err)
 			}
 			loginIdentifierType = input.IdentifierType
@@ -100,7 +100,7 @@ func TestAuthLoginInfersUsername(t *testing.T) {
 			IdentifierType string `json:"identifier_type"`
 			Identifier     string `json:"identifier"`
 		}
-		if err := json.NewDecoder(request.Body).Decode(&input); err != nil {
+		if err := json.UnmarshalRead(request.Body, &input); err != nil {
 			t.Errorf("decode login request: %v", err)
 		}
 		identifierType = input.IdentifierType

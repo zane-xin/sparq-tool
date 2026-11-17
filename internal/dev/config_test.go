@@ -2,7 +2,8 @@ package dev
 
 import (
 	"context"
-	"encoding/json"
+	"encoding/json/jsontext"
+	"encoding/json/v2"
 	"fmt"
 	"net"
 	"net/http"
@@ -314,10 +315,10 @@ func TestDevTokenClientRequestsAndRevokesToken(t *testing.T) {
 				t.Fatalf("token authorization = %q", request.Header.Get("Authorization"))
 			}
 			var input devTokenRequest
-			if err := json.NewDecoder(request.Body).Decode(&input); err != nil || input.Plugin != "cms" || len(input.Permissions) != 1 || input.Permissions[0] != "dev.frontend" {
+			if err := json.UnmarshalRead(request.Body, &input); err != nil || input.Plugin != "cms" || len(input.Permissions) != 1 || input.Permissions[0] != "dev.frontend" {
 				t.Fatalf("token request = %+v, error = %v", input, err)
 			}
-			_ = json.NewEncoder(response).Encode(devTokenResponse{
+			_ = json.MarshalEncode(jsontext.NewEncoder(response), devTokenResponse{
 				Token: "dev-token", ExpiresAt: "2026-07-26T18:00:00Z",
 			})
 		case "/dev/auth/revoke":
@@ -349,7 +350,7 @@ func TestRegisterDevFrontend(t *testing.T) {
 			return
 		}
 		var input devFrontendRequest
-		if err := json.NewDecoder(request.Body).Decode(&input); err != nil {
+		if err := json.UnmarshalRead(request.Body, &input); err != nil {
 			t.Fatal(err)
 		}
 		if input.Token != "dev-token" || input.Plugin != "cms" || input.RootURL == "" {

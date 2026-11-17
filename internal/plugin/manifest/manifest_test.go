@@ -1,7 +1,7 @@
 package manifest
 
 import (
-	"encoding/json"
+	"encoding/json/jsontext"
 	"os"
 	"path/filepath"
 	"strings"
@@ -963,7 +963,7 @@ spec:
 		protocolManifest.Contributions.SettingsTemplates[0].Code != "auth.external.github" {
 		t.Fatalf("settings templates = %#v", protocolManifest.Contributions.SettingsTemplates)
 	}
-	if !json.Valid(protocolManifest.Contributions.SettingsTemplates[0].Schema.Data) {
+	if !jsontext.Value(protocolManifest.Contributions.SettingsTemplates[0].Schema.Data).IsValid() {
 		t.Fatalf("settings template schema = %s", protocolManifest.Contributions.SettingsTemplates[0].Schema.Data)
 	}
 }
