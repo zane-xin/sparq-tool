@@ -1,6 +1,6 @@
 module github.com/zane-xin/sparq-tool
 
-go 1.26.1
+go 1.27.0
 
 require (
 	github.com/fsnotify/fsnotify v1.9.0

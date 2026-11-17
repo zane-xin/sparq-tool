@@ -570,7 +570,7 @@ spec:
   runtime:
     supported: [local]
 `,
-		"go.mod": "module example.com/cms\n\ngo 1.26.1\n\nrequire (\n\tgithub.com/Masterminds/semver/v3 v3.4.0 // indirect\n\tgithub.com/zane-xin/sparq-protocol v0.0.0\n)\n\nreplace github.com/zane-xin/sparq-protocol v0.0.0 => " + filepath.ToSlash(protocolDir) + "\n",
+		"go.mod": "module example.com/cms\n\ngo 1.27.0\n\nrequire (\n\tgithub.com/Masterminds/semver/v3 v3.4.0 // indirect\n\tgithub.com/zane-xin/sparq-protocol v0.0.0\n)\n\nreplace github.com/zane-xin/sparq-protocol v0.0.0 => " + filepath.ToSlash(protocolDir) + "\n",
 		"go.sum": "github.com/Masterminds/semver/v3 v3.4.0 h1:Zog+i5UMtVoCU8oKka5P7i9q9HgrJeGzI9SA1Xbatp0=\n" +
 			"github.com/Masterminds/semver/v3 v3.4.0/go.mod h1:4V+yj/TJE1HU9XfppCwVMZq3I84lprf4nC11bSS5beM=\n",
 		"bootstrap.go":     "package cms\n",
